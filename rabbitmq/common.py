@@ -3,7 +3,7 @@
 import pika
 import time
 
-class RabbitMQ_Test():
+class Queue_Basic():
     """  rabbitmq steps
          1. connect to the broker : rabbitmq 
          connect = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
@@ -25,16 +25,26 @@ class RabbitMQ_Test():
         self.channel = self.connect.channel()
         print("channel established on connection.")
 
-    def create_queue(self,queue_name="default"):
-        if not "default" == queue:
-            print("creating queue <%s>"%queue_name)
+    def create_exchange(self,e_name,e_type="fanout"):
+        self.channel.exchange_declare(exchange=e_name,exchange_type=e_type)
+
+    def bind_exchange_queue(self,exchange,queue_name):
+        self.channel.queue_bind(exchange=exchange,queue=queue_name)
+
+    def create_queue(self,queue_type,queue_name=""):
+        if not queue_name:
+            print("creating queue <%s> with type <%s>"%(queue_name,queue_type))
             #durable, makes the rabbitMQ to remember the queue even after restart.
             #self.channel.queue_declare(queue=queue_name,durable=True)
-            self.channel.queue_declare(queue=queue_name)
+            try : 
+                q_name = self.channel.queue_declare(queue=queue_name,exclusive=True,durable=True)
+            except :
+                print("create queue <%s> failed,maybe the name is duplicate ? "%queue_name)
         else :
-            print("queue name not specified, <default> queue created.")
+            print("queue name not specified, <random> queue created.")
             #self.channel.queue_declare(queue="default",durable=True) 
-            self.channel.queue_declare(queue="default") 
+            q_name = self.channel.queue_declare(exclusive=True,durable=True)
+        return q_name
  
     def send_message(self,queue_name,message):
         print("sending message <%s> on queue <%s>"%(message,queue_name))
