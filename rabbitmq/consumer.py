@@ -2,41 +2,16 @@
 
 import pika
 import time
-class Consumer():
-    """ consumer steps:
-    #1. create connection
-    connect = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-    #2. create channel
-    channel = connect.channel()
-    #3. declare queue
-    channel.queue_declare(queue="mavric",durable=True)
-    #4. define a callback function
-        
-    #5. consume the message which stores in the dedicated queue
-    #channel.basic_consume(callback,queue="hello",no_ack=True)
-    channel.basic_consume(callback,queue="mavric")
-    print("[*] waiting for messages. To exit press CTRL+C")
-    #6. start the consume process 
-    channel.start_consuming()
-    """
-    def __init__(self):
-        self.connect = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-        self.channel = self.connect.channel()
-    
-    def create_queue(self,queue_name="default"):
-        if not "default" == queue_name:
-            print("creating queue <%s>"%queue_name)                        
-            #durable, makes the rabbitMQ to remember the queue even after restart.
-            #self.channel.queue_declare(queue=queue_name,durable=True)
-            self.channel.queue_declare(queue=queue_name)
-        else :
-            print("queue name not specified, <default> queue created.")
-            self.channel.queue_declare(queue="default",durable=True)
+from common import Queue_Basic as QB
 
-    def listen(self,queue_name="default"):
-        self.channel.basic_consume(self.callback,queue_name) 
+class Consumer():
+    def __init__(self):
+        self.qb = QB()
+         
+    def listen(self,queue_name):
+        self.qb.channel.basic_consume(self.callback,queue_name) 
         print("[x] listening on queue :< %s >,To exit press CTRL+C"%queue_name)
-        self.channel.start_consuming()
+        self.qb.channel.start_consuming()
 
     def callback(self,ch,method,properties,body):
         print("[x] Received %r"%body)
@@ -45,11 +20,22 @@ class Consumer():
         #even the queue is broken or the queue is down.
         ch.basic_ack(delivery_tag = method.delivery_tag)
 
-def main():
-    q_name = "mavric"
+def p1_ex1_q1(q_name):
     consumer = Consumer()
-    consumer.create_queue(q_name)
+    queue_obj = consumer.qb.create_queue(q_name)
+    #queue_name = queue_obj.method.queue
     consumer.listen(q_name)
+
+def p1_ex1_q2(q_name):
+    consumer = Consumer()
+    queue_obj = consumer.qb.create_queue(q_name)
+    #queue_name = queue_obj.method.queue
+    consumer.listen(q_name)
+    #consumer.listen(q_name_list[1])
+
+def main():
+    p1_ex1_q1("p1_1_2_02")
+    #p1_ex1_q2("q1_1_2_01")
 
 if __name__ == "__main__":
     main()

@@ -2,59 +2,58 @@
 
 import pika
 import time
+from common import Queue_Basic as QB
 
-class RabbitMQ_Test():
-    """  rabbitmq steps
-         1. connect to the broker : rabbitmq 
-         connect = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-         2. create a channel
-         channel = connect.channel()
-         3. create a queue
-         channel.queue_declare(queue="hello")
-         4. send a message to queue
-         channel.basic_publish(exchange="",routing_key="hello",body="hello world")
-         print("[x] Sent 'Hello World!'")
-         5. close the connection
-         connect.close()
-    """   
+class Producer():
     def __init__(self):
-        #1. connect to the broker : rabbitmq 
-        self.connect = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-        print("connection to rabbitmq established.")
-        #2. create a channel
-        self.channel = self.connect.channel()
-        print("channel established on connection.")
-
-    def create_queue(self,queue_name="default"):
-        if not "default" == queue:
-            print("creating queue <%s>"%queue_name)
-            #durable, makes the rabbitMQ to remember the queue even after restart.
-            #self.channel.queue_declare(queue=queue_name,durable=True)
-            self.channel.queue_declare(queue=queue_name)
-        else :
-            print("queue name not specified, <default> queue created.")
-            #self.channel.queue_declare(queue="default",durable=True) 
-            self.channel.queue_declare(queue="default") 
+        self.qb = QB()
  
-    def send_message(self,queue_name,message):
+    def send_message(self,message,exchange_name="",queue_name=""):
         print("sending message <%s> on queue <%s>"%(message,queue_name))
-        self.channel.basic_publish(exchange="",
+        self.qb.channel.basic_publish(exchange=exchange_name,
                                    routing_key=queue_name,
                                    body=message,
                                    #to make the message persistence
                                    properties=pika.BasicProperties(delivery_mode = 2))
-        #self.connect.close() 
+        #self.qb.connect.close() 
+
+def p1_ex1_q1(exc_name,q_name):
+    producer = Producer()
+    producer.qb.create_exchange(exc_name)
+    queue_obj = producer.qb.create_queue(q_name)
+    queue_name = queue_obj.method.queue
+    print("[x] queue_name : ",queue_name)
+    producer.qb.bind_exchange_queue(exc_name,queue_name)
+    #send message via declared queue
+    producer.send_message("hello,p1_ex1_q1",exc_name)
+
+def p1_ex1_q2(exc_name):
+    producer = Producer()
+    producer.qb.create_exchange(exc_name)
+    queue_obj1 = producer.qb.create_queue("p1_1_2_01")
+    queue_obj2 = producer.qb.create_queue("p1_1_2_02")
+    queue_name1 = queue_obj1.method.queue
+    queue_name2 = queue_obj2.method.queue
+    producer.qb.bind_exchange_queue(exc_name,queue_name1)
+    producer.qb.bind_exchange_queue(exc_name,queue_name2)
+    #send message via declared queue
+    for i in range(1,11):
+        producer.send_message("hello,p1_ex1_q1[%s]"%i,"ex1_1_2")
+def p1_ex2_q1():
+    pass
+def p1_ex2_q2():
+    pass
+def p2_ex1_q1():
+    pass
+def p2_ex2_q1():
+    pass
+def p2_ex2_q2():
+    pass
     
+
 def main():
-    queue_list = ["mavric","iceman","jaguar"]
-    message = ["hello,mavric","hello,iceman","helle,jaguar"]
-    print("sending...")
-    for i in range(0,3):
-        rabbit = RabbitMQ_Test()
-        map(rabbit.create_queue,queue_list)
-        #rabbit.send_message(queue_list[i],message[i])
-        rabbit.send_message("mavric","mavric[%s]"%(i))
-               
+    #p1_ex1_q1("p1_ex1_q1","p1_ex1_q1")
+    p1_ex1_q2("ex1_1_2")
 
 if __name__ == "__main__":
     main()
