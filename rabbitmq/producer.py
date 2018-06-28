@@ -8,10 +8,10 @@ class Producer():
     def __init__(self):
         self.qb = QB()
  
-    def send_message(self,message,exchange_name="",queue_name=""):
-        print("sending message <%s> on queue <%s>"%(message,queue_name))
+    def send_message(self,message,exchange_name,routing_key):
+        print("sending message <%s> with rule <%s>"%(message,routing_key))
         self.qb.channel.basic_publish(exchange=exchange_name,
-                                   routing_key=queue_name,
+                                   routing_key=routing_key,
                                    body=message,
                                    #to make the message persistence
                                    properties=pika.BasicProperties(delivery_mode = 2))
@@ -34,11 +34,16 @@ def p1_ex1_q2(exc_name):
     queue_obj2 = producer.qb.create_queue("p1_1_2_02")
     queue_name1 = queue_obj1.method.queue
     queue_name2 = queue_obj2.method.queue
-    producer.qb.bind_exchange_queue(exc_name,queue_name1)
-    producer.qb.bind_exchange_queue(exc_name,queue_name2)
+    producer.qb.bind_exchange_queue(exc_name,queue_name1,"black")
+    producer.qb.bind_exchange_queue(exc_name,queue_name2,"red")
     #send message via declared queue
+    rule=["black","red"]
     for i in range(1,11):
-        producer.send_message("hello,p1_ex1_q1[%s]"%i,"ex1_1_2")
+        if 0 == i % 2 : 
+            producer.send_message("hello,p1_1_2_01[%s]"%i,"ex1_1_2",rule[0])
+        else : 
+            producer.send_message("hello,p1_1_2_02[%s]"%i,"ex1_1_2",rule[1])
+   
 def p1_ex2_q1():
     pass
 def p1_ex2_q2():
@@ -53,7 +58,7 @@ def p2_ex2_q2():
 
 def main():
     #p1_ex1_q1("p1_ex1_q1","p1_ex1_q1")
-    p1_ex1_q2("ex1_1_2")
+    p1_ex1_q2("ex1_1_2_01")
 
 if __name__ == "__main__":
     main()

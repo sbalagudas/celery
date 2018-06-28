@@ -27,13 +27,13 @@ class Queue_Basic():
         self.channel = self.connect.channel()
         logging.info("connection to channel established.")
 
-    def create_exchange(self,e_name,e_type="fanout"):
+    def create_exchange(self,e_name,e_type="direct"):
         logging.info("creating exchange : < %s >"%e_name)
         self.channel.exchange_declare(exchange=e_name,exchange_type=e_type)
 
-    def bind_exchange_queue(self,exchange,queue_name):
+    def bind_exchange_queue(self,exchange,queue_name,bind_key):
         logging.info("binding exchange with queue < %s : %s >"%(exchange,queue_name))
-        self.channel.queue_bind(exchange=exchange,queue=queue_name)
+        self.channel.queue_bind(exchange=exchange,queue=queue_name,routing_key=bind_key)
 
     def create_queue(self,queue_name=""):
         logging.info("queue name < %s > in create_queue"%queue_name)
@@ -50,6 +50,14 @@ class Queue_Basic():
             #self.channel.queue_declare(queue="default",durable=True) 
             q_name = self.channel.queue_declare(exclusive=True)
         return q_name
+   
+    def send_message(self,message,corr_id,exchange_name="",queue_name="",reply_to=""):
+        if ((not exchange_name) and (not queue_name)):
+            raise Exception("must specifyt at least one of exchange and queue")
+        self.channel.basic_publish(exchange=exchange_name,
+                                   routing_key=queue_name,
+                                   properties=pika.BasicProperties(reply_to=reply_to,correlation_id=corr_id),
+                                   body=message)
  
 def main():
     queue_list = ["mavric","iceman","jaguar"]

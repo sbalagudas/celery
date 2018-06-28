@@ -14,7 +14,7 @@ class Consumer():
         self.qb.channel.start_consuming()
 
     def callback(self,ch,method,properties,body):
-        print("[x] Received %r"%body)
+        print("[x] Received %r : %r"%(method.routing_key,body))
         time.sleep(3)
         #acknowledge, to ensure the message will never lost, 
         #even the queue is broken or the queue is down.
